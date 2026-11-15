@@ -279,17 +279,19 @@ function masthead(t, d) {
 
   const bw = LINK ? Math.round(LINK.label.length * 11.2 + 64) : 0;
   const button = LINK
-    ? `<g class="in" style="animation-delay:500ms"><rect x="3" y="236" width="${bw}" height="42" rx="21" fill="#0071e3"/><text x="25" y="263.5" font-size="19" font-weight="600" style="fill:#fff">${esc(LINK.label)}</text><path d="M${bw - 30} 262l9 -9m-6.5 0h6.5v6.5" fill="none" stroke="#fff" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"/></g>`
+    ? `<g><rect x="3" y="236" width="${bw}" height="42" rx="21" fill="#0071e3"/><text x="25" y="263.5" font-size="19" font-weight="600" style="fill:#fff">${esc(LINK.label)}</text><path d="M${bw - 30} 262l9 -9m-6.5 0h6.5v6.5" fill="none" stroke="#fff" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"/></g>`
     : '';
   const css =
     `.ln{stroke-dasharray:1}.ring{opacity:0;transform-box:fill-box;transform-origin:center}@keyframes draw{from{stroke-dashoffset:1}}@keyframes ping{from{opacity:.6}to{opacity:0;transform:scale(3.2)}}` +
-    MOTION(`.in{animation:rise .7s ease-out both}.ln{animation:draw 2.6s cubic-bezier(.4,0,.2,1) .3s backwards}.ar{animation:appear 1.2s ease 2s backwards}.dot{animation:appear .4s ease 2.8s backwards}.ring{animation:ping 1.6s ease-out 3s 1}`);
+    MOTION(`.in{animation:rise .5s ease-out both}.ln{animation:draw 1.4s cubic-bezier(.4,0,.2,1) .2s backwards}.ar{animation:appear .6s ease 1.1s backwards}.dot{animation:appear .3s ease 1.5s backwards}.ring{animation:ping 1.1s ease-out 1.6s 1}`);
 
   const body = `
 <defs><linearGradient id="fill" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${t.accent}" stop-opacity=".32"/><stop offset="1" stop-color="${t.accent}" stop-opacity="0"/></linearGradient></defs>
 <text class="big" x="0" y="${LINK ? 112 : 128}" font-size="118" style="letter-spacing:-.035em">${esc(NAME)}</text>
-${TAGLINE.map((p, k) => `<text class="mute in" x="3" y="${(LINK ? 170 : 190) + k * 37}" font-size="29" font-weight="600" style="letter-spacing:-.015em;animation-delay:${200 + k * 150}ms">${esc(p)}</text>`).join('\n')}
+<g class="in">
+${TAGLINE.map((p, k) => `<text class="mute" x="3" y="${(LINK ? 170 : 190) + k * 37}" font-size="29" font-weight="600" style="letter-spacing:-.015em">${esc(p)}</text>`).join('\n')}
 ${button}
+</g>
 <rect x="${CX}" width="${W - CX}" height="${H}" rx="28" fill="${t.card}"/>
 <text class="mute" x="${X0}" y="48" font-size="17" font-weight="600">Contributions</text>
 <text class="big num" x="${X0 - 2}" y="112" font-size="64">${d.total.toLocaleString('en-US')}</text>
@@ -315,12 +317,14 @@ function figures(t, d) {
   ];
   const body = `
 <text class="eyebrow" x="24" y="38">Activity, last 12 months</text>
+<g class="r">
 ${figs.map(([v, k], i) => {
     const x = 24 + (i % 3) * 144, y = 98 + Math.floor(i / 3) * 72;
-    return `<g class="r" style="animation-delay:${i * 80}ms"><text class="big num" x="${x}" y="${y}" font-size="34">${esc(v)}</text><text class="mute" x="${x}" y="${y + 21}" font-size="12.5">${esc(k)}</text></g>`;
-  }).join('\n')}`;
+    return `<g><text class="big num" x="${x}" y="${y}" font-size="34">${esc(v)}</text><text class="mute" x="${x}" y="${y + 21}" font-size="12.5">${esc(k)}</text></g>`;
+  }).join('\n')}
+</g>`;
   return svg(W, H, t, body, {
-    css: MOTION(`.r{animation:rise .6s ease-out both}`),
+    css: MOTION(`.r{animation:rise .5s ease-out both}`),
     label: `Last 12 months: ${figs.map(([v, k]) => `${v} ${k}`).join(', ')}`,
   });
 }
@@ -336,15 +340,17 @@ function languages(t, d) {
   }
   const legend = d.langs.map((l, i) => {
     const lx = 24 + (i % 2) * 212, ly = 102 + Math.floor(i / 2) * 28;
-    return `<g class="r" style="animation-delay:${200 + i * 60}ms"><circle cx="${lx + 5}" cy="${ly - 4.5}" r="4.5" fill="${l.color}"/><text x="${lx + 18}" y="${ly}" font-size="13.5">${esc(l.name)}</text><text class="mute num" x="${lx + 196}" y="${ly}" font-size="13" text-anchor="end">${l.pct.toFixed(1)}%</text></g>`;
+    return `<g><circle cx="${lx + 5}" cy="${ly - 4.5}" r="4.5" fill="${l.color}"/><text x="${lx + 18}" y="${ly}" font-size="13.5">${esc(l.name)}</text><text class="mute num" x="${lx + 196}" y="${ly}" font-size="13" text-anchor="end">${l.pct.toFixed(1)}%</text></g>`;
   }).join('\n');
   const body = `
 <defs><clipPath id="bar"><rect x="${BX}" y="56" height="10" rx="5" width="${BW}"/></clipPath></defs>
 <text class="eyebrow" x="24" y="38">Languages, average share per repo</text>
 <g clip-path="url(#bar)"><g class="grow">${bar}</g></g>
-${legend}`;
+<g class="r">
+${legend}
+</g>`;
   return svg(W, H, t, body, {
-    css: `.grow{transform-box:fill-box;transform-origin:left}@keyframes grow{from{transform:scaleX(0)}}` + MOTION(`.grow{animation:grow 1.2s cubic-bezier(.2,.8,.2,1) both}.r{animation:rise .6s ease-out both}`),
+    css: `.grow{transform-box:fill-box;transform-origin:left}@keyframes grow{from{transform:scaleX(0)}}` + MOTION(`.grow{animation:grow .8s cubic-bezier(.2,.8,.2,1) both}.r{animation:rise .5s ease-out both}`),
     label: `Languages, average share per ${PRIVATE ? '' : 'public '}repository: ${d.langs.map((l) => `${l.name} ${l.pct.toFixed(1)}%`).join(', ')}`,
   });
 }
@@ -365,7 +371,7 @@ function skyline(t, d) {
       const X = f(OX + w * STEP + (6 - dow) * DX), Y = f(OY - (6 - dow) * DY);
       if (!cell.count) { tiles += `M${X} ${Y}h${BW}l${FX} -${FY}h-${BW}z`; return; }
       const h = f(6 + 86 * (cell.count / max) ** 0.55);
-      bars += `<g class="b" style="animation-delay:${w * 16}ms"><path class="f${cell.level}" d="M${X} ${Y}h${BW}v-${h}h-${BW}z"/><path class="s${cell.level}" d="M${f(X + BW)} ${Y}l${FX} -${FY}v-${h}l-${FX} ${FY}z"/><path class="t${cell.level}" d="M${X} ${f(Y - h)}h${BW}l${FX} -${FY}h-${BW}z"/></g>`;
+      bars += `<g><path class="f${cell.level}" d="M${X} ${Y}h${BW}v-${h}h-${BW}z"/><path class="s${cell.level}" d="M${f(X + BW)} ${Y}l${FX} -${FY}v-${h}l-${FX} ${FY}z"/><path class="t${cell.level}" d="M${X} ${f(Y - h)}h${BW}l${FX} -${FY}h-${BW}z"/></g>`;
     });
   }
 
@@ -382,12 +388,13 @@ function skyline(t, d) {
   const legend = t.ramp.map((c, i) => `<rect x="${W - 139 + i * 15}" y="28.5" width="10" height="10" rx="3" fill="${c}"/>`).join('');
   const css =
     [1, 2, 3, 4].map((l) => `.t${l}{fill:${t.ramp[l]}}.f${l}{fill:${shade(t.ramp[l], t.front)}}.s${l}{fill:${shade(t.ramp[l], t.side)}}`).join('') +
-    MOTION(`.b{animation:rise .8s cubic-bezier(.2,.8,.2,1) both}`);
+    `.b{transform-box:fill-box;transform-origin:bottom}@keyframes up{from{transform:scaleY(0)}}` +
+    MOTION(`.b{animation:up .9s cubic-bezier(.2,.8,.2,1) both}`);
   const body = `
 <text class="eyebrow" x="28" y="38">Contributions, day by day</text>
 <text class="mute" x="${W - 145}" y="38" font-size="12" text-anchor="end">Less</text>${legend}<text class="mute" x="${W - 28}" y="38" font-size="12" text-anchor="end">More</text>
 <path d="${tiles}" fill="${t.ramp[0]}" stroke="${t.tileEdge}" stroke-width=".6"/>
-${bars}
+<g class="b">${bars}</g>
 ${months}`;
   return svg(W, H, t, body, { css, label: `Contributions day by day over the last year, ${d.total} in total` });
 }
