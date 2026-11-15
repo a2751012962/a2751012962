@@ -19,7 +19,7 @@ const TOKEN = process.env.GH_TOKEN || process.env.GITHUB_TOKEN;
 //                        in the Action a PROFILE_TOKEN secret. Without one the Action leaves
 //                        the drawings as they are instead of redrawing them from public data.
 //   link                 { "label": "LinkedIn", "url": "https://..." } the button under the tagline;
-//                        the whole name block links there
+//                        the whole headline links there
 //   projects.minCommits  a repo needs at least this many commits of mine to get a card
 //   projects.max         most cards to show
 //   projects.hide        ["owner/repo", ...] never shown
@@ -200,9 +200,12 @@ async function load() {
 }
 
 // ───────────────────────────── masthead ─────────────────────────────
-// Headline on the left; on the right a card with the year's contributions as a running total.
+// One drawing that lays itself out from the width it is shown at. It has no viewBox, so one
+// unit is one CSS pixel and its media queries see the image's own width: wide, the name sits
+// beside the contributions card; narrow, the card is dropped and the type steps down, so the
+// headline stays readable on a phone instead of shrinking with the page.
 function masthead(t, d) {
-  const W = 1200, H = 300, CX = 640, X0 = 676, X1 = 1164, YB = 244, YT = 156;
+  const H = 236, CX = 640, CW = 560, CH = 300, X0 = 676, X1 = 1164, YB = 244, YT = 156;
   const n = d.days.length;
   let cum = 0;
   const pts = d.days.map((x, i) => {
@@ -222,36 +225,38 @@ function masthead(t, d) {
     last = tx;
   });
 
-  const half = (x, w, body, css, label) => `<svg xmlns="http://www.w3.org/2000/svg" viewBox="${x} 0 ${w} ${H}" width="${w}" height="${H}" role="img" aria-label="${esc(label)}">
-<title>${esc(label)}</title>
-<style>text{font-family:${SANS};fill:${t.ink}}.mute{fill:${t.mute}}.big{font-weight:700;letter-spacing:-.022em}.num{font-variant-numeric:tabular-nums}@keyframes appear{from{opacity:0}}@keyframes rise{from{opacity:0;transform:translateY(8px)}}${css}</style>${body}
-</svg>
-`;
-
-  const bw = LINK ? Math.round(LINK.label.length * 11.2 + 64) : 0;
+  const bw = LINK ? Math.round(LINK.label.length * 8.6 + 58) : 0;
   const button = LINK
-    ? `<g class="tag" style="animation-delay:500ms"><rect x="3" y="236" width="${bw}" height="42" rx="21" fill="#0071e3"/><text x="25" y="263.5" font-size="19" font-weight="600" style="fill:#fff">${esc(LINK.label)}</text><path d="M${bw - 30} 262l9 -9m-6.5 0h6.5v6.5" fill="none" stroke="#fff" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"/></g>`
+    ? `<g class="in" style="animation-delay:500ms"><rect x="1" y="186" width="${bw}" height="36" rx="18" fill="#0071e3"/><text x="19" y="209.5" font-size="15" font-weight="600" style="fill:#fff">${esc(LINK.label)}</text><path d="M${bw - 25} 208.5l8 -8m-6 0h6v6" fill="none" stroke="#fff" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></g>`
     : '';
-  const left = half(0, CX, `
-<text class="big" x="0" y="${LINK ? 112 : 128}" font-size="118" style="letter-spacing:-.035em">${esc(NAME)}</text>
-${TAGLINE.map((p, k) => `<text class="mute tag" x="3" y="${(LINK ? 170 : 190) + k * 37}" font-size="29" font-weight="600" style="letter-spacing:-.015em;animation-delay:${200 + k * 150}ms">${esc(p)}</text>`).join('\n')}
-${button}`, MOTION(`.tag{animation:rise .7s ease-out both}`), `${NAME}. ${TAGLINE.join(' ')}${LINK ? ` ${LINK.label}.` : ''}`);
+  const label = `${NAME}. ${TAGLINE.join(' ')} ${d.total} contributions in the last 12 months.`;
+  const css =
+    `text{font-family:${SANS};fill:${t.ink}}.mute{fill:${t.mute}}.big{font-weight:700;letter-spacing:-.022em}.num{font-variant-numeric:tabular-nums}` +
+    `.name{font-size:88px;letter-spacing:-.035em}.tag{font-size:21px;font-weight:600;letter-spacing:-.015em}` +
+    `@media (max-width:620px){.chart{display:none}}@media (max-width:400px){.name{font-size:68px}.tag{font-size:17px}}` +
+    `.ln{stroke-dasharray:1}.ring{opacity:0;transform-box:fill-box;transform-origin:center}` +
+    `@keyframes appear{from{opacity:0}}@keyframes rise{from{opacity:0;transform:translateY(8px)}}@keyframes draw{from{stroke-dashoffset:1}}@keyframes ping{from{opacity:.6}to{opacity:0;transform:scale(3.2)}}` +
+    MOTION(`.in{animation:rise .7s ease-out both}.ln{animation:draw 2.6s cubic-bezier(.4,0,.2,1) .3s backwards}.ar{animation:appear 1.2s ease 2s backwards}.dot{animation:appear .4s ease 2.8s backwards}.ring{animation:ping 1.6s ease-out 3s 1}`);
 
-  const right = half(CX, W - CX, `
+  return `<svg xmlns="http://www.w3.org/2000/svg" width="100%" height="${H}" role="img" aria-label="${esc(label)}">
+<title>${esc(label)}</title>
+<style>${css}</style>
+<text class="big name" x="0" y="${LINK ? 84 : 100}">${esc(NAME)}</text>
+${TAGLINE.map((p, k) => `<text class="mute tag in" x="2" y="${(LINK ? 128 : 146) + k * 27}" style="animation-delay:${200 + k * 150}ms">${esc(p)}</text>`).join('\n')}
+${button}
+<svg class="chart" x="54%" width="46%" height="${H}" viewBox="${CX} 0 ${CW} ${CH}" preserveAspectRatio="xMaxYMin meet">
 <defs><linearGradient id="fill" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${t.accent}" stop-opacity=".32"/><stop offset="1" stop-color="${t.accent}" stop-opacity="0"/></linearGradient></defs>
-<rect x="${CX}" width="${W - CX}" height="${H}" rx="28" fill="${t.card}"/>
+<rect x="${CX}" width="${CW}" height="${CH}" rx="28" fill="${t.card}"/>
 <text class="mute" x="${X0}" y="48" font-size="17" font-weight="600">Contributions</text>
 <text class="big num" x="${X0 - 2}" y="112" font-size="64">${d.total.toLocaleString('en-US')}</text>
 <text class="mute" x="${X0}" y="138" font-size="17">in the last 12 months</text>
 <path class="ar" d="${line}L${X1} ${YB}L${X0} ${YB}Z" fill="url(#fill)"/>
 <path class="ln" d="${line}" pathLength="1" fill="none" stroke="${t.accent}" stroke-width="3.5" stroke-linejoin="round" stroke-linecap="round"/>
 <g class="dot"><circle class="ring" cx="${ex}" cy="${ey}" r="6" fill="none" stroke="${t.accent}" stroke-width="1.5"/><circle cx="${ex}" cy="${ey}" r="6" fill="${t.accent}"/></g>
-${months}`,
-    `.ln{stroke-dasharray:1}.ring{opacity:0;transform-box:fill-box;transform-origin:center}@keyframes draw{from{stroke-dashoffset:1}}@keyframes ping{from{opacity:.6}to{opacity:0;transform:scale(3.2)}}` +
-    MOTION(`.ln{animation:draw 2.6s cubic-bezier(.4,0,.2,1) .3s backwards}.ar{animation:appear 1.2s ease 2s backwards}.dot{animation:appear .4s ease 2.8s backwards}.ring{animation:ping 1.6s ease-out 3s 1}`),
-    `${d.total} contributions in the last 12 months, shown as a running total`);
-
-  return { left, right };
+${months}
+</svg>
+</svg>
+`;
 }
 
 // ───────────────────────────── figures ─────────────────────────────
@@ -371,10 +376,8 @@ async function draw(data) {
 await mkdir(OUT, { recursive: true });
 for (const old of await readdir(OUT)) if (old.endsWith('.svg')) await rm(join(OUT, old));
 for (const [name, t] of Object.entries(THEMES)) {
-  const head = masthead(t, data);
   const files = {
-    'masthead-left': head.left,
-    'masthead-right': head.right,
+    masthead: masthead(t, data),
     figures: figures(t, data),
     languages: languages(t, data),
     skyline: skyline(t, data),
@@ -394,14 +397,8 @@ const block = (name, lines, align = ' align="center"') => {
   const inner = lines.length ? `\n<p${align}>\n${lines.join('\n')}\n</p>\n` : '\n';
   next = next.slice(0, a + START.length) + inner + next.slice(b);
 };
-const half = (file, width, alt) =>
-  `<picture><source media="(prefers-color-scheme: dark)" srcset="assets/${file}-dark.svg"><img src="assets/${file}-light.svg" width="${width}" alt="${esc(alt)}"></picture>`;
-const name = half('masthead-left', '53%', `${NAME}. ${TAGLINE.join(' ')}`);
-// Both halves go on one line with nothing between them: a space would push the second half onto its own row on narrow screens.
-block('headline', [
-  (LINK ? `<a href="${esc(LINK.url)}" title="${esc(LINK.label)}">${name}</a>` : name) +
-    half('masthead-right', '46%', `${data.total} contributions in the last 12 months`),
-], '');
+const headline = `<picture><source media="(prefers-color-scheme: dark)" srcset="assets/masthead-dark.svg"><img src="assets/masthead-light.svg" width="100%" alt="${esc(`${NAME}. ${TAGLINE.join(' ')}`)}"></picture>`;
+block('headline', [LINK ? `<a href="${esc(LINK.url)}" title="${esc(LINK.label)}">${headline}</a>` : headline], '');
 block('projects', data.projects.map((p) => {
   const file = `assets/card-${slug(p.repo)}`;
   const tip = `${p.repo}, ${p.commits} ${p.commits === 1 ? 'commit' : 'commits'} by me`;
