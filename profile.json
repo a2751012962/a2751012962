@@ -1,0 +1,48 @@
+{
+  "name": "Zeming",
+  "tagline": [
+    "Quant research and machine learning.",
+    "Creative web and game netcode."
+  ],
+  "links": [
+    {
+      "label": "LinkedIn",
+      "url": "https://www.linkedin.com/in/michaelleeee2/"
+    }
+  ],
+  "projects": {
+    "minCommits": 11,
+    "max": 6,
+    "hide": [],
+    "pin": [],
+    "details": {
+      "a2751012962/caaciorg": {
+        "blurb": "Bilingual community website: memberships, event sign-ups, a business directory and a staff back office. Cloudflare Pages + Supabase."
+      },
+      "IGUIDE-chat/iGuide": {
+        "blurb": "Bilingual campus-guide assistant: streaming chat grounded in official pages, a guide library and a dorm map, all in one Cloudflare Worker."
+      },
+      "Lyraedan/Oxygen_Not_Included_Together": {
+        "title": "ONI Together",
+        "blurb": "Multiplayer mod for Oxygen Not Included. I work on the netcode: animation, world and pipe sync, reconnects, packet batching."
+      },
+      "a2751012962/4": {
+        "title": "4 · Acorn Inn Rules",
+        "blurb": "Interactive mystery game for the browser: a typewriter story engine, puzzles and four Three.js mini-games, with no build step."
+      },
+      "a2751012962/iGuide-landing": {
+        "blurb": "Landing pages in React and Vite, prerendered to static HTML with per-language routes for international SEO."
+      },
+      "a2751012962/stock-norm-labeling-dashboard": {
+        "blurb": "Research tooling: label stock-forum posts with an LLM, train BERT classifiers on them, publish aggregate-only progress."
+      },
+      "IGUIDE-chat/muse-gateway": {
+        "private": true,
+        "commits": 19,
+        "language": "TypeScript",
+        "languageColor": "#3178c6",
+        "blurb": "Gateway between an AI assistant and Slack, as a Cloudflare Worker: every call is permission-checked and the Slack token never leaves it."
+      }
+    }
+  }
+}
