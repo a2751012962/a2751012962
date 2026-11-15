@@ -99,7 +99,7 @@ async function load() {
         own: repositories(first:100, ${SCOPE}ownerAffiliations:OWNER, isFork:false){
           nodes{ languages(first:15, orderBy:{field:SIZE, direction:DESC}){ edges{ size node{ name color } } } }
         }
-        contributionsCollection{ contributionCalendar{ weeks{ contributionDays{ date contributionCount contributionLevel } } } }
+        contributionsCollection{ restrictedContributionsCount commitContributionsByRepository(maxRepositories:100){ repository{ isPrivate } } contributionCalendar{ weeks{ contributionDays{ date contributionCount contributionLevel } } } }
       }
     }`,
     { login: LOGIN },
@@ -165,27 +165,34 @@ async function load() {
   );
   const days = weeks.flat();
 
-  // GitHub's calendar leaves out commits made in private repos (unless the account shares them),
-  // so with includePrivate they are added here: my commits on each private repo's default branch,
-  // by the day they were authored. Private pull requests and issues are not counted.
+  // Whether GitHub's calendar already holds my private work depends on the token: one with the
+  // read:user scope (or an account that shares private contributions) gets the full calendar, and
+  // then nothing is added. Otherwise the calendar is public only, and with includePrivate the
+  // private part is rebuilt here from what GitHub counts as a contribution: my commits on each
+  // private repo's default branch, the pull requests and issues I opened there, and the private
+  // repos I created, each on its own day.
+  const cc = data.user.contributionsCollection;
+  const shared = cc.restrictedContributionsCount > 0 || cc.commitContributionsByRepository.some((c) => c.repository.isPrivate);
   let added = 0, newDays = 0;
-  if (PRIVATE) {
+  if (PRIVATE && !shared) {
     const since = `${days[0].date}T00:00:00Z`;
     const byDate = new Map(days.map((d) => [d.date, d]));
     const before = new Set(days.filter((d) => d.count).map((d) => d.date));
     const HIST = `history(author:{id:$id}, since:$since, first:100, after:$after){ nodes{ authoredDate } pageInfo{ hasNextPage endCursor } }`;
     const VARS = `query($id:ID!, $since:GitTimestamp!, $after:String)`;
     const priv = await gql(
-      `${VARS}{ viewer{ repositories(first:100, privacy:PRIVATE, ownerAffiliations:[OWNER, COLLABORATOR, ORGANIZATION_MEMBER]){ nodes{ nameWithOwner defaultBranchRef{ target{ ... on Commit{ ${HIST} } } } } } } }`,
+      `${VARS}{ viewer{ repositories(first:100, privacy:PRIVATE, ownerAffiliations:[OWNER, COLLABORATOR, ORGANIZATION_MEMBER]){ nodes{ nameWithOwner createdAt owner{ login } defaultBranchRef{ target{ ... on Commit{ ${HIST} } } } } } } }`,
       { id: data.user.id, since, after: null },
     );
+    const bump = (iso) => {
+      const day = byDate.get(iso.slice(0, 10));
+      if (day) { day.count++; added++; }
+    };
     for (const repo of priv.viewer.repositories.nodes) {
+      if (repo.owner.login.toLowerCase() === LOGIN.toLowerCase()) bump(repo.createdAt);
       let page = repo.defaultBranchRef?.target?.history;
       while (page) {
-        for (const c of page.nodes) {
-          const day = byDate.get(c.authoredDate.slice(0, 10));
-          if (day) { day.count++; added++; }
-        }
+        for (const c of page.nodes) bump(c.authoredDate);
         if (!page.pageInfo.hasNextPage) break;
         const [owner, name] = repo.nameWithOwner.split('/');
         const more = await gql(
@@ -194,6 +201,15 @@ async function load() {
         );
         page = more.repository.defaultBranchRef.target.history;
       }
+    }
+    for (let after = null; ;) {
+      const found = await gql(
+        `query($q:String!, $after:String){ search(query:$q, type:ISSUE, first:100, after:$after){ nodes{ ... on PullRequest{ createdAt } ... on Issue{ createdAt } } pageInfo{ hasNextPage endCursor } } }`,
+        { q: `author:${LOGIN} is:private created:>=${days[0].date}`, after },
+      );
+      for (const item of found.search.nodes) if (item.createdAt) bump(item.createdAt);
+      if (!found.search.pageInfo.hasNextPage) break;
+      after = found.search.pageInfo.endCursor;
     }
     newDays = days.filter((d) => d.count && !before.has(d.date)).length;
     // Shade by quartile of the active days, as GitHub does.
@@ -226,7 +242,7 @@ async function load() {
   if (rest > 0.0005) top.push({ name: 'Other', color: '#8e8e93', size: rest });
 
   return {
-    weeks, days, longest, added, newDays,
+    weeks, days, longest, added, newDays, shared,
     total: days.reduce((s, d) => s + d.count, 0),
     active: days.filter((d) => d.count).length,
     best: days.reduce((a, b) => (b.count > a.count ? b : a), days[0]),
@@ -436,7 +452,7 @@ if (next !== readme) await writeFile(readmePath, next);
 for (const p of data.projects) console.log(`${String(p.commits).padStart(5)} commits  ${p.repo}`);
 
 console.log(`\n${LOGIN}: ${data.total} contributions on ${data.active} of ${data.days.length} days, longest streak ${data.longest}` +
-  (PRIVATE ? ` (${data.added} of them commits in private repos, which made ${data.newDays} more days active)` : ''));
+  (!PRIVATE ? '' : data.shared ? ' (the calendar from GitHub already included private work)' : ` (${data.added} of them rebuilt from private repos, which made ${data.newDays} more days active)`));
 }
 
 const data = await load();
