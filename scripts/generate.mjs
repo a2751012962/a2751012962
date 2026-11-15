@@ -50,7 +50,11 @@ const THEMES = {
 };
 const SANS = "-apple-system,BlinkMacSystemFont,'SF Pro Display','SF Pro Text','Helvetica Neue','Segoe UI',Arial,sans-serif";
 const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-// Motion is opt-in: every drawing is complete when static, plays once, and is over within five seconds.
+// Motion is opt-in: every drawing is complete when static, plays once, and is over within a second.
+// It is fades only, nothing that moves. Chrome animates an SVG shown as an image on its own fixed
+// 60 Hz timer, not in step with the screen (svg_image_chrome_client.cc calls it a "fixed, jittery,
+// frame-delay"), so anything travelling across the image judders, worst on high-refresh displays.
+// A change of opacity has no edge for the eye to follow, so it stays smooth.
 const MOTION = (rules) => `@media (prefers-reduced-motion:no-preference){${rules}}`;
 
 const f = (n) => +n.toFixed(1);
@@ -70,7 +74,7 @@ const wrap = (s, n) => {
 
 const svg = (w, h, t, body, { css = '', label = '', card = true } = {}) => `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${w} ${h}" width="${w}" height="${h}" role="img" aria-label="${esc(label)}">
 <title>${esc(label)}</title>
-<style>text{font-family:${SANS};fill:${t.ink}}.mute{fill:${t.mute}}.accent{fill:${t.accent}}.eyebrow{font-size:13px;font-weight:600;fill:${t.mute}}.big{font-weight:700;letter-spacing:-.022em}.num{font-variant-numeric:tabular-nums}@keyframes appear{from{opacity:0}}@keyframes rise{from{opacity:0;transform:translateY(8px)}}${css}</style>
+<style>text{font-family:${SANS};fill:${t.ink}}.mute{fill:${t.mute}}.accent{fill:${t.accent}}.eyebrow{font-size:13px;font-weight:600;fill:${t.mute}}.big{font-weight:700;letter-spacing:-.022em}.num{font-variant-numeric:tabular-nums}@keyframes appear{from{opacity:0}}${css}</style>
 ${card ? `<rect width="${w}" height="${h}" rx="20" fill="${t.card}"/>` : ''}${body}
 </svg>
 `;
@@ -282,8 +286,7 @@ function masthead(t, d) {
     ? `<g><rect x="3" y="236" width="${bw}" height="42" rx="21" fill="#0071e3"/><text x="25" y="263.5" font-size="19" font-weight="600" style="fill:#fff">${esc(LINK.label)}</text><path d="M${bw - 30} 262l9 -9m-6.5 0h6.5v6.5" fill="none" stroke="#fff" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"/></g>`
     : '';
   const css =
-    `.ln{stroke-dasharray:1}.ring{opacity:0;transform-box:fill-box;transform-origin:center}@keyframes draw{from{stroke-dashoffset:1}}@keyframes ping{from{opacity:.6}to{opacity:0;transform:scale(3.2)}}` +
-    MOTION(`.in{animation:rise .5s ease-out both}.ln{animation:draw 1.4s cubic-bezier(.4,0,.2,1) .2s backwards}.ar{animation:appear .6s ease 1.1s backwards}.dot{animation:appear .3s ease 1.5s backwards}.ring{animation:ping 1.1s ease-out 1.6s 1}`);
+    MOTION(`.in,.ln,.ar,.dot{animation:appear .6s ease-out both}`);
 
   const body = `
 <defs><linearGradient id="fill" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${t.accent}" stop-opacity=".32"/><stop offset="1" stop-color="${t.accent}" stop-opacity="0"/></linearGradient></defs>
@@ -297,8 +300,8 @@ ${button}
 <text class="big num" x="${X0 - 2}" y="112" font-size="64">${d.total.toLocaleString('en-US')}</text>
 <text class="mute" x="${X0}" y="138" font-size="17">in the last 12 months</text>
 <path class="ar" d="${line}L${X1} ${YB}L${X0} ${YB}Z" fill="url(#fill)"/>
-<path class="ln" d="${line}" pathLength="1" fill="none" stroke="${t.accent}" stroke-width="3.5" stroke-linejoin="round" stroke-linecap="round"/>
-<g class="dot"><circle class="ring" cx="${ex}" cy="${ey}" r="6" fill="none" stroke="${t.accent}" stroke-width="1.5"/><circle cx="${ex}" cy="${ey}" r="6" fill="${t.accent}"/></g>
+<path class="ln" d="${line}" fill="none" stroke="${t.accent}" stroke-width="3.5" stroke-linejoin="round" stroke-linecap="round"/>
+<circle class="dot" cx="${ex}" cy="${ey}" r="6" fill="${t.accent}"/>
 ${months}`;
   return svg(W, H, t, body, { css, card: false, label: `${NAME}. ${TAGLINE.join(' ')} ${d.total} contributions in the last 12 months.` });
 }
@@ -324,7 +327,7 @@ ${figs.map(([v, k], i) => {
   }).join('\n')}
 </g>`;
   return svg(W, H, t, body, {
-    css: MOTION(`.r{animation:rise .5s ease-out both}`),
+    css: MOTION(`.r{animation:appear .6s ease-out both}`),
     label: `Last 12 months: ${figs.map(([v, k]) => `${v} ${k}`).join(', ')}`,
   });
 }
@@ -345,12 +348,12 @@ function languages(t, d) {
   const body = `
 <defs><clipPath id="bar"><rect x="${BX}" y="56" height="10" rx="5" width="${BW}"/></clipPath></defs>
 <text class="eyebrow" x="24" y="38">Languages, average share per repo</text>
-<g clip-path="url(#bar)"><g class="grow">${bar}</g></g>
+<g class="r" clip-path="url(#bar)">${bar}</g>
 <g class="r">
 ${legend}
 </g>`;
   return svg(W, H, t, body, {
-    css: `.grow{transform-box:fill-box;transform-origin:left}@keyframes grow{from{transform:scaleX(0)}}` + MOTION(`.grow{animation:grow .8s cubic-bezier(.2,.8,.2,1) both}.r{animation:rise .5s ease-out both}`),
+    css: MOTION(`.r{animation:appear .6s ease-out both}`),
     label: `Languages, average share per ${PRIVATE ? '' : 'public '}repository: ${d.langs.map((l) => `${l.name} ${l.pct.toFixed(1)}%`).join(', ')}`,
   });
 }
@@ -388,8 +391,7 @@ function skyline(t, d) {
   const legend = t.ramp.map((c, i) => `<rect x="${W - 139 + i * 15}" y="28.5" width="10" height="10" rx="3" fill="${c}"/>`).join('');
   const css =
     [1, 2, 3, 4].map((l) => `.t${l}{fill:${t.ramp[l]}}.f${l}{fill:${shade(t.ramp[l], t.front)}}.s${l}{fill:${shade(t.ramp[l], t.side)}}`).join('') +
-    `.b{transform-box:fill-box;transform-origin:bottom}@keyframes up{from{transform:scaleY(0)}}` +
-    MOTION(`.b{animation:up .9s cubic-bezier(.2,.8,.2,1) both}`);
+    MOTION(`.b{animation:appear .6s ease-out both}`);
   const body = `
 <text class="eyebrow" x="28" y="38">Contributions, day by day</text>
 <text class="mute" x="${W - 145}" y="38" font-size="12" text-anchor="end">Less</text>${legend}<text class="mute" x="${W - 28}" y="38" font-size="12" text-anchor="end">More</text>
