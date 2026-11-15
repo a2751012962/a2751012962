@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 300" width="640" height="300" role="img" aria-label="Zeming. Quant research and machine learning. Creative web and game netcode. LinkedIn.">
+<title>Zeming. Quant research and machine learning. Creative web and game netcode. LinkedIn.</title>
+<style>text{font-family:-apple-system,BlinkMacSystemFont,'SF Pro Display','SF Pro Text','Helvetica Neue','Segoe UI',Arial,sans-serif;fill:#1d1d1f}.mute{fill:#63636a}.big{font-weight:700;letter-spacing:-.022em}.num{font-variant-numeric:tabular-nums}@keyframes appear{from{opacity:0}}@keyframes rise{from{opacity:0;transform:translateY(8px)}}@media (prefers-reduced-motion:no-preference){.tag{animation:rise .7s ease-out both}}</style>
+<text class="big" x="0" y="112" font-size="118" style="letter-spacing:-.035em">Zeming</text>
+<text class="mute tag" x="3" y="170" font-size="29" font-weight="600" style="letter-spacing:-.015em;animation-delay:200ms">Quant research and machine learning.</text>
+<text class="mute tag" x="3" y="207" font-size="29" font-weight="600" style="letter-spacing:-.015em;animation-delay:350ms">Creative web and game netcode.</text>
+<g class="tag" style="animation-delay:500ms"><rect x="3" y="236" width="154" height="42" rx="21" fill="#0071e3"/><text x="25" y="263.5" font-size="19" font-weight="600" style="fill:#fff">LinkedIn</text><path d="M124 262l9 -9m-6.5 0h6.5v6.5" fill="none" stroke="#fff" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"/></g>
+</svg>

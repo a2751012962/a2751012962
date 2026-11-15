@@ -14,7 +14,12 @@ const TOKEN = process.env.GH_TOKEN || process.env.GITHUB_TOKEN;
 // ───────────────────────────── content ─────────────────────────────
 // What to show is set in profile.json, next to the README. Edit it and push:
 //   name, tagline        the headline and the two lines under it
-//   links                [{ "label": "LinkedIn", "url": "https://..." }] buttons under the headline
+//   includePrivate       true counts private repos in the repo total and the languages.
+//                        That needs a token that can read them: locally `gh auth token`,
+//                        in the Action a PROFILE_TOKEN secret. Without one the Action leaves
+//                        the drawings as they are instead of redrawing them from public data.
+//   link                 { "label": "LinkedIn", "url": "https://..." } the button under the tagline;
+//                        the whole name block links there
 //   projects.minCommits  a repo needs at least this many commits of mine to get a card
 //   projects.max         most cards to show
 //   projects.hide        ["owner/repo", ...] never shown
@@ -26,7 +31,9 @@ const TOKEN = process.env.GH_TOKEN || process.env.GITHUB_TOKEN;
 const CONFIG = JSON.parse(await readFile(join(ROOT, 'profile.json'), 'utf8'));
 const NAME = CONFIG.name;
 const TAGLINE = CONFIG.tagline;
-const LINKS = (CONFIG.links ?? []).filter((l) => l.label && /^https:\/\//.test(l.url ?? ''));
+const LINK = CONFIG.link?.label && /^https:\/\//.test(CONFIG.link.url ?? '') ? CONFIG.link : null;
+const PRIVATE = CONFIG.includePrivate === true;
+const SCOPE = PRIVATE ? '' : 'privacy:PUBLIC, ';
 const SHOW = { minCommits: 1, max: 6, hide: [], pin: [], details: {}, ...CONFIG.projects };
 
 // ───────────────────────────── look ─────────────────────────────
@@ -84,11 +91,12 @@ async function gql(query, variables = {}) {
 async function load() {
   const data = await gql(
     `query($login:String!){
+      viewer{ login }
       user(login:$login){
         id
         createdAt
-        pub: repositories(privacy:PUBLIC, ownerAffiliations:OWNER){ totalCount }
-        own: repositories(first:100, privacy:PUBLIC, ownerAffiliations:OWNER, isFork:false){
+        pub: repositories(${SCOPE}ownerAffiliations:OWNER){ totalCount }
+        own: repositories(first:100, ${SCOPE}ownerAffiliations:OWNER, isFork:false){
           nodes{ languages(first:15, orderBy:{field:SIZE, direction:DESC}){ edges{ size node{ name color } } } }
         }
         contributionsCollection{ contributionCalendar{ weeks{ contributionDays{ date contributionCount contributionLevel } } } }
@@ -97,6 +105,10 @@ async function load() {
     { login: LOGIN },
   );
   if (!data.user) throw new Error(`No such user: ${LOGIN}`);
+  if (PRIVATE && data.viewer.login.toLowerCase() !== LOGIN.toLowerCase()) {
+    console.log(`includePrivate is on, but this token belongs to ${data.viewer.login} and cannot read ${LOGIN}'s private repos. Add a PROFILE_TOKEN secret; nothing was redrawn.`);
+    return null;
+  }
 
   // Every public repo I have commits in: my own (forks excluded) and others I contributed to.
   const FIELDS = `nameWithOwner name description stargazerCount owner{ login } primaryLanguage{ name color } defaultBranchRef{ target{ ... on Commit{ history(author:{id:$id}){ totalCount } } } }`;
@@ -156,18 +168,24 @@ async function load() {
   let longest = 0, run = 0;
   for (const d of days) { run = d.count ? run + 1 : 0; longest = Math.max(longest, run); }
 
-  const bytes = new Map();
-  for (const repo of data.user.own.nodes)
+  // Each repo contributes its own language mix with equal weight.
+  const share = new Map();
+  let counted = 0;
+  for (const repo of data.user.own.nodes) {
+    const size = repo.languages.edges.reduce((n, e) => n + e.size, 0);
+    if (!size) continue;
+    counted++;
     for (const e of repo.languages.edges) {
-      const cur = bytes.get(e.node.name) ?? { name: e.node.name, color: e.node.color ?? '#8e8e93', size: 0 };
-      cur.size += e.size;
-      bytes.set(e.node.name, cur);
+      const cur = share.get(e.node.name) ?? { name: e.node.name, color: e.node.color ?? '#8e8e93', size: 0 };
+      cur.size += e.size / size;
+      share.set(e.node.name, cur);
     }
-  const sorted = [...bytes.values()].sort((a, b) => b.size - a.size);
-  const totalBytes = sorted.reduce((s, l) => s + l.size, 0) || 1;
+  }
+  const sorted = [...share.values()].sort((a, b) => b.size - a.size);
+  const totalBytes = counted || 1;
   const top = sorted.slice(0, 7);
-  const rest = sorted.slice(7).reduce((s, l) => s + l.size, 0);
-  if (rest) top.push({ name: 'Other', color: '#8e8e93', size: rest });
+  const rest = sorted.slice(7).reduce((n, l) => n + l.size, 0);
+  if (rest > 0.0005) top.push({ name: 'Other', color: '#8e8e93', size: rest });
 
   return {
     weeks, days, longest,
@@ -204,14 +222,23 @@ function masthead(t, d) {
     last = tx;
   });
 
-  const css =
-    `.ln{stroke-dasharray:1}.ring{opacity:0;transform-box:fill-box;transform-origin:center}@keyframes draw{from{stroke-dashoffset:1}}@keyframes ping{from{opacity:.6}to{opacity:0;transform:scale(3.2)}}` +
-    MOTION(`.tag{animation:rise .7s ease-out both}.ln{animation:draw 2.6s cubic-bezier(.4,0,.2,1) .3s backwards}.ar{animation:appear 1.2s ease 2s backwards}.dot{animation:appear .4s ease 2.8s backwards}.ring{animation:ping 1.6s ease-out 3s 1}`);
+  const half = (x, w, body, css, label) => `<svg xmlns="http://www.w3.org/2000/svg" viewBox="${x} 0 ${w} ${H}" width="${w}" height="${H}" role="img" aria-label="${esc(label)}">
+<title>${esc(label)}</title>
+<style>text{font-family:${SANS};fill:${t.ink}}.mute{fill:${t.mute}}.big{font-weight:700;letter-spacing:-.022em}.num{font-variant-numeric:tabular-nums}@keyframes appear{from{opacity:0}}@keyframes rise{from{opacity:0;transform:translateY(8px)}}${css}</style>${body}
+</svg>
+`;
 
-  const body = `
+  const bw = LINK ? Math.round(LINK.label.length * 11.2 + 64) : 0;
+  const button = LINK
+    ? `<g class="tag" style="animation-delay:500ms"><rect x="3" y="236" width="${bw}" height="42" rx="21" fill="#0071e3"/><text x="25" y="263.5" font-size="19" font-weight="600" style="fill:#fff">${esc(LINK.label)}</text><path d="M${bw - 30} 262l9 -9m-6.5 0h6.5v6.5" fill="none" stroke="#fff" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"/></g>`
+    : '';
+  const left = half(0, CX, `
+<text class="big" x="0" y="${LINK ? 112 : 128}" font-size="118" style="letter-spacing:-.035em">${esc(NAME)}</text>
+${TAGLINE.map((p, k) => `<text class="mute tag" x="3" y="${(LINK ? 170 : 190) + k * 37}" font-size="29" font-weight="600" style="letter-spacing:-.015em;animation-delay:${200 + k * 150}ms">${esc(p)}</text>`).join('\n')}
+${button}`, MOTION(`.tag{animation:rise .7s ease-out both}`), `${NAME}. ${TAGLINE.join(' ')}${LINK ? ` ${LINK.label}.` : ''}`);
+
+  const right = half(CX, W - CX, `
 <defs><linearGradient id="fill" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${t.accent}" stop-opacity=".32"/><stop offset="1" stop-color="${t.accent}" stop-opacity="0"/></linearGradient></defs>
-<text class="big" x="0" y="128" font-size="118" style="letter-spacing:-.035em">${esc(NAME)}</text>
-${TAGLINE.map((p, k) => `<text class="mute tag" x="3" y="${190 + k * 38}" font-size="29" font-weight="600" style="letter-spacing:-.015em;animation-delay:${200 + k * 150}ms">${esc(p)}</text>`).join('\n')}
 <rect x="${CX}" width="${W - CX}" height="${H}" rx="28" fill="${t.card}"/>
 <text class="mute" x="${X0}" y="48" font-size="17" font-weight="600">Contributions</text>
 <text class="big num" x="${X0 - 2}" y="112" font-size="64">${d.total.toLocaleString('en-US')}</text>
@@ -219,8 +246,12 @@ ${TAGLINE.map((p, k) => `<text class="mute tag" x="3" y="${190 + k * 38}" font-s
 <path class="ar" d="${line}L${X1} ${YB}L${X0} ${YB}Z" fill="url(#fill)"/>
 <path class="ln" d="${line}" pathLength="1" fill="none" stroke="${t.accent}" stroke-width="3.5" stroke-linejoin="round" stroke-linecap="round"/>
 <g class="dot"><circle class="ring" cx="${ex}" cy="${ey}" r="6" fill="none" stroke="${t.accent}" stroke-width="1.5"/><circle cx="${ex}" cy="${ey}" r="6" fill="${t.accent}"/></g>
-${months}`;
-  return svg(W, H, t, body, { css, card: false, label: `${NAME}. ${TAGLINE.join(' ')} ${d.total} contributions in the last 12 months.` });
+${months}`,
+    `.ln{stroke-dasharray:1}.ring{opacity:0;transform-box:fill-box;transform-origin:center}@keyframes draw{from{stroke-dashoffset:1}}@keyframes ping{from{opacity:.6}to{opacity:0;transform:scale(3.2)}}` +
+    MOTION(`.ln{animation:draw 2.6s cubic-bezier(.4,0,.2,1) .3s backwards}.ar{animation:appear 1.2s ease 2s backwards}.dot{animation:appear .4s ease 2.8s backwards}.ring{animation:ping 1.6s ease-out 3s 1}`),
+    `${d.total} contributions in the last 12 months, shown as a running total`);
+
+  return { left, right };
 }
 
 // ───────────────────────────── figures ─────────────────────────────
@@ -232,7 +263,7 @@ function figures(t, d) {
     [(d.total / Math.max(1, d.active)).toFixed(1), 'per active day'],
     [d.best.count, `busiest day, ${MONTHS[m - 1]} ${day}`],
     [d.longest, 'day longest streak'],
-    [d.publicRepos, 'public repos'],
+    [d.publicRepos, PRIVATE ? 'repositories' : 'public repos'],
     [d.since, 'joined GitHub'],
   ];
   const body = `
@@ -262,12 +293,12 @@ function languages(t, d) {
   }).join('\n');
   const body = `
 <defs><clipPath id="bar"><rect x="${BX}" y="56" height="10" rx="5" width="${BW}"/></clipPath></defs>
-<text class="eyebrow" x="24" y="38">Languages, public repos by bytes</text>
+<text class="eyebrow" x="24" y="38">Languages, average share per repo</text>
 <g clip-path="url(#bar)"><g class="grow">${bar}</g></g>
 ${legend}`;
   return svg(W, H, t, body, {
     css: `.grow{transform-box:fill-box;transform-origin:left}@keyframes grow{from{transform:scaleX(0)}}` + MOTION(`.grow{animation:grow 1.2s cubic-bezier(.2,.8,.2,1) both}.r{animation:rise .6s ease-out both}`),
-    label: `Languages across public repositories: ${d.langs.map((l) => `${l.name} ${l.pct.toFixed(1)}%`).join(', ')}`,
+    label: `Languages, average share per ${PRIVATE ? '' : 'public '}repository: ${d.langs.map((l) => `${l.name} ${l.pct.toFixed(1)}%`).join(', ')}`,
   });
 }
 
@@ -314,18 +345,6 @@ ${months}`;
   return svg(W, H, t, body, { css, label: `Contributions day by day over the last year, ${d.total} in total` });
 }
 
-// ───────────────────────────── link buttons ─────────────────────────────
-function linkButton(label) {
-  const W = Math.round(label.length * 8.8 + 62), H = 38;
-  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${W} ${H}" width="${W}" height="${H}" role="img" aria-label="${esc(label)}">
-<title>${esc(label)}</title>
-<rect width="${W}" height="${H}" rx="19" fill="#0071e3"/>
-<text x="20" y="24.5" font-family="${SANS}" font-size="15" font-weight="600" fill="#fff">${esc(label)}</text>
-<path d="M${W - 27} 23.5l8 -8m-6 0h6v6" fill="none" stroke="#fff" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/>
-</svg>
-`;
-}
-
 // ───────────────────────────── project cards ─────────────────────────────
 function project(t, p) {
   const W = 460, H = 186;
@@ -348,12 +367,14 @@ ${p.private ? '' : `<circle cx="${W - 37}" cy="${H - 31}" r="13" fill="${t.chip}
 
 // ───────────────────────────── main ─────────────────────────────
 const slug = (repo) => repo.toLowerCase().replace(/[^a-z0-9]+/g, '-');
-const data = await load();
+async function draw(data) {
 await mkdir(OUT, { recursive: true });
 for (const old of await readdir(OUT)) if (old.endsWith('.svg')) await rm(join(OUT, old));
 for (const [name, t] of Object.entries(THEMES)) {
+  const head = masthead(t, data);
   const files = {
-    masthead: masthead(t, data),
+    'masthead-left': head.left,
+    'masthead-right': head.right,
     figures: figures(t, data),
     languages: languages(t, data),
     skyline: skyline(t, data),
@@ -361,8 +382,6 @@ for (const [name, t] of Object.entries(THEMES)) {
   };
   for (const [file, content] of Object.entries(files)) await writeFile(join(OUT, `${file}-${name}.svg`), content);
 }
-
-for (const l of LINKS) await writeFile(join(OUT, `link-${slug(l.label)}.svg`), linkButton(l.label));
 
 // The README parts that depend on the data sit between marker comments and are rewritten here.
 const readmePath = join(ROOT, 'README.md');
@@ -375,7 +394,14 @@ const block = (name, lines, align = ' align="center"') => {
   const inner = lines.length ? `\n<p${align}>\n${lines.join('\n')}\n</p>\n` : '\n';
   next = next.slice(0, a + START.length) + inner + next.slice(b);
 };
-block('links', LINKS.map((l) => `  <a href="${esc(l.url)}" title="${esc(l.label)}"><img src="assets/link-${slug(l.label)}.svg" height="34" alt="${esc(l.label)}"></a>`), '');
+const half = (file, width, alt) =>
+  `<picture><source media="(prefers-color-scheme: dark)" srcset="assets/${file}-dark.svg"><img src="assets/${file}-light.svg" width="${width}" alt="${esc(alt)}"></picture>`;
+const name = half('masthead-left', '53%', `${NAME}. ${TAGLINE.join(' ')}`);
+// Both halves go on one line with nothing between them: a space would push the second half onto its own row on narrow screens.
+block('headline', [
+  (LINK ? `<a href="${esc(LINK.url)}" title="${esc(LINK.label)}">${name}</a>` : name) +
+    half('masthead-right', '46%', `${data.total} contributions in the last 12 months`),
+], '');
 block('projects', data.projects.map((p) => {
   const file = `assets/card-${slug(p.repo)}`;
   const tip = `${p.repo}, ${p.commits} ${p.commits === 1 ? 'commit' : 'commits'} by me`;
@@ -387,3 +413,7 @@ if (next !== readme) await writeFile(readmePath, next);
 for (const p of data.projects) console.log(`${String(p.commits).padStart(5)} commits  ${p.repo}`);
 
 console.log(`\n${LOGIN}: ${data.total} contributions on ${data.active} of ${data.days.length} days, longest streak ${data.longest}`);
+}
+
+const data = await load();
+if (data) await draw(data);

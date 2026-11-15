@@ -4,12 +4,11 @@
     "Quant research and machine learning.",
     "Creative web and game netcode."
   ],
-  "links": [
-    {
-      "label": "LinkedIn",
-      "url": "https://www.linkedin.com/in/michaelleeee2/"
-    }
-  ],
+  "link": {
+    "label": "LinkedIn",
+    "url": "https://www.linkedin.com/in/michaelleeee2/"
+  },
+  "includePrivate": true,
   "projects": {
     "minCommits": 11,
     "max": 6,

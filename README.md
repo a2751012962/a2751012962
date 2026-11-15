@@ -1,13 +1,8 @@
-<picture>
-  <source media="(prefers-color-scheme: dark)" srcset="assets/masthead-dark.svg">
-  <img src="assets/masthead-light.svg" width="100%" alt="Zeming. Quant research and machine learning. Creative web and game netcode.">
-</picture>
-
-<!-- links:start -->
+<!-- headline:start -->
 <p>
-  <a href="https://www.linkedin.com/in/michaelleeee2/" title="LinkedIn"><img src="assets/link-linkedin.svg" height="34" alt="LinkedIn"></a>
+<a href="https://www.linkedin.com/in/michaelleeee2/" title="LinkedIn"><picture><source media="(prefers-color-scheme: dark)" srcset="assets/masthead-left-dark.svg"><img src="assets/masthead-left-light.svg" width="53%" alt="Zeming. Quant research and machine learning. Creative web and game netcode."></picture></a><picture><source media="(prefers-color-scheme: dark)" srcset="assets/masthead-right-dark.svg"><img src="assets/masthead-right-light.svg" width="46%" alt="737 contributions in the last 12 months"></picture>
 </p>
-<!-- links:end -->
+<!-- headline:end -->
 
 ### About
 
@@ -34,7 +29,7 @@
   </picture>
   <picture>
     <source media="(prefers-color-scheme: dark)" srcset="assets/languages-dark.svg">
-    <img src="assets/languages-light.svg" width="49%" alt="Languages across public repositories">
+    <img src="assets/languages-light.svg" width="49%" alt="Languages across my repositories">
   </picture>
 </p>
 <p align="center">

@@ -29,7 +29,8 @@ jobs:
       - name: Draw cards
         run: node scripts/generate.mjs
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          # PROFILE_TOKEN (optional) is a personal token that can read private repos.
+          GITHUB_TOKEN: ${{ secrets.PROFILE_TOKEN || secrets.GITHUB_TOKEN }}
       - name: Commit if anything changed
         run: |
           if [ -n "$(git status --porcelain assets README.md)" ]; then
