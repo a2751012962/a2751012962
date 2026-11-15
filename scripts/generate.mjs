@@ -14,7 +14,7 @@ const TOKEN = process.env.GH_TOKEN || process.env.GITHUB_TOKEN;
 // ───────────────────────────── content ─────────────────────────────
 // What to show is set in profile.json, next to the README. Edit it and push:
 //   name, tagline        the headline and the two lines under it
-//   includePrivate       true counts private repos in the repo total and the languages.
+//   includePrivate       true counts private repos everywhere: contributions, repo total, languages.
 //                        That needs a token that can read them: locally `gh auth token`,
 //                        in the Action a PROFILE_TOKEN secret. Without one the Action leaves
 //                        the drawings as they are instead of redrawing them from public data.
@@ -165,6 +165,44 @@ async function load() {
   );
   const days = weeks.flat();
 
+  // GitHub's calendar leaves out commits made in private repos (unless the account shares them),
+  // so with includePrivate they are added here: my commits on each private repo's default branch,
+  // by the day they were authored. Private pull requests and issues are not counted.
+  let added = 0, newDays = 0;
+  if (PRIVATE) {
+    const since = `${days[0].date}T00:00:00Z`;
+    const byDate = new Map(days.map((d) => [d.date, d]));
+    const before = new Set(days.filter((d) => d.count).map((d) => d.date));
+    const HIST = `history(author:{id:$id}, since:$since, first:100, after:$after){ nodes{ authoredDate } pageInfo{ hasNextPage endCursor } }`;
+    const VARS = `query($id:ID!, $since:GitTimestamp!, $after:String)`;
+    const priv = await gql(
+      `${VARS}{ viewer{ repositories(first:100, privacy:PRIVATE, ownerAffiliations:[OWNER, COLLABORATOR, ORGANIZATION_MEMBER]){ nodes{ nameWithOwner defaultBranchRef{ target{ ... on Commit{ ${HIST} } } } } } } }`,
+      { id: data.user.id, since, after: null },
+    );
+    for (const repo of priv.viewer.repositories.nodes) {
+      let page = repo.defaultBranchRef?.target?.history;
+      while (page) {
+        for (const c of page.nodes) {
+          const day = byDate.get(c.authoredDate.slice(0, 10));
+          if (day) { day.count++; added++; }
+        }
+        if (!page.pageInfo.hasNextPage) break;
+        const [owner, name] = repo.nameWithOwner.split('/');
+        const more = await gql(
+          `${VARS}{ repository(owner:"${owner}", name:"${name}"){ defaultBranchRef{ target{ ... on Commit{ ${HIST} } } } } }`,
+          { id: data.user.id, since, after: page.pageInfo.endCursor },
+        );
+        page = more.repository.defaultBranchRef.target.history;
+      }
+    }
+    newDays = days.filter((d) => d.count && !before.has(d.date)).length;
+    // Shade by quartile of the active days, as GitHub does.
+    const ranked = days.filter((d) => d.count).map((d) => d.count).sort((a, b) => a - b);
+    const cut = (q) => ranked[Math.min(ranked.length - 1, Math.floor(ranked.length * q))] ?? 0;
+    const [q1, q2, q3] = [cut(0.25), cut(0.5), cut(0.75)];
+    for (const d of days) d.level = !d.count ? 0 : d.count <= q1 ? 1 : d.count <= q2 ? 2 : d.count <= q3 ? 3 : 4;
+  }
+
   let longest = 0, run = 0;
   for (const d of days) { run = d.count ? run + 1 : 0; longest = Math.max(longest, run); }
 
@@ -188,7 +226,7 @@ async function load() {
   if (rest > 0.0005) top.push({ name: 'Other', color: '#8e8e93', size: rest });
 
   return {
-    weeks, days, longest,
+    weeks, days, longest, added, newDays,
     total: days.reduce((s, d) => s + d.count, 0),
     active: days.filter((d) => d.count).length,
     best: days.reduce((a, b) => (b.count > a.count ? b : a), days[0]),
@@ -200,12 +238,10 @@ async function load() {
 }
 
 // ───────────────────────────── masthead ─────────────────────────────
-// One drawing that lays itself out from the width it is shown at. It has no viewBox, so one
-// unit is one CSS pixel and its media queries see the image's own width: wide, the name sits
-// beside the contributions card; narrow, the card is dropped and the type steps down, so the
-// headline stays readable on a phone instead of shrinking with the page.
+// One image that scales as a whole: name, tagline and button on the left, the contributions
+// card on the right, in the same arrangement at every width.
 function masthead(t, d) {
-  const H = 236, CX = 640, CW = 560, CH = 300, X0 = 676, X1 = 1164, YB = 244, YT = 156;
+  const W = 1200, H = 300, CX = 640, X0 = 676, X1 = 1164, YB = 244, YT = 156;
   const n = d.days.length;
   let cum = 0;
   const pts = d.days.map((x, i) => {
@@ -225,38 +261,28 @@ function masthead(t, d) {
     last = tx;
   });
 
-  const bw = LINK ? Math.round(LINK.label.length * 8.6 + 58) : 0;
+  const bw = LINK ? Math.round(LINK.label.length * 11.2 + 64) : 0;
   const button = LINK
-    ? `<g class="in" style="animation-delay:500ms"><rect x="1" y="186" width="${bw}" height="36" rx="18" fill="#0071e3"/><text x="19" y="209.5" font-size="15" font-weight="600" style="fill:#fff">${esc(LINK.label)}</text><path d="M${bw - 25} 208.5l8 -8m-6 0h6v6" fill="none" stroke="#fff" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></g>`
+    ? `<g class="in" style="animation-delay:500ms"><rect x="3" y="236" width="${bw}" height="42" rx="21" fill="#0071e3"/><text x="25" y="263.5" font-size="19" font-weight="600" style="fill:#fff">${esc(LINK.label)}</text><path d="M${bw - 30} 262l9 -9m-6.5 0h6.5v6.5" fill="none" stroke="#fff" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"/></g>`
     : '';
-  const label = `${NAME}. ${TAGLINE.join(' ')} ${d.total} contributions in the last 12 months.`;
   const css =
-    `text{font-family:${SANS};fill:${t.ink}}.mute{fill:${t.mute}}.big{font-weight:700;letter-spacing:-.022em}.num{font-variant-numeric:tabular-nums}` +
-    `.name{font-size:88px;letter-spacing:-.035em}.tag{font-size:21px;font-weight:600;letter-spacing:-.015em}` +
-    `@media (max-width:620px){.chart{display:none}}@media (max-width:400px){.name{font-size:68px}.tag{font-size:17px}}` +
-    `.ln{stroke-dasharray:1}.ring{opacity:0;transform-box:fill-box;transform-origin:center}` +
-    `@keyframes appear{from{opacity:0}}@keyframes rise{from{opacity:0;transform:translateY(8px)}}@keyframes draw{from{stroke-dashoffset:1}}@keyframes ping{from{opacity:.6}to{opacity:0;transform:scale(3.2)}}` +
+    `.ln{stroke-dasharray:1}.ring{opacity:0;transform-box:fill-box;transform-origin:center}@keyframes draw{from{stroke-dashoffset:1}}@keyframes ping{from{opacity:.6}to{opacity:0;transform:scale(3.2)}}` +
     MOTION(`.in{animation:rise .7s ease-out both}.ln{animation:draw 2.6s cubic-bezier(.4,0,.2,1) .3s backwards}.ar{animation:appear 1.2s ease 2s backwards}.dot{animation:appear .4s ease 2.8s backwards}.ring{animation:ping 1.6s ease-out 3s 1}`);
 
-  return `<svg xmlns="http://www.w3.org/2000/svg" width="100%" height="${H}" role="img" aria-label="${esc(label)}">
-<title>${esc(label)}</title>
-<style>${css}</style>
-<text class="big name" x="0" y="${LINK ? 84 : 100}">${esc(NAME)}</text>
-${TAGLINE.map((p, k) => `<text class="mute tag in" x="2" y="${(LINK ? 128 : 146) + k * 27}" style="animation-delay:${200 + k * 150}ms">${esc(p)}</text>`).join('\n')}
-${button}
-<svg class="chart" x="54%" width="46%" height="${H}" viewBox="${CX} 0 ${CW} ${CH}" preserveAspectRatio="xMaxYMin meet">
+  const body = `
 <defs><linearGradient id="fill" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${t.accent}" stop-opacity=".32"/><stop offset="1" stop-color="${t.accent}" stop-opacity="0"/></linearGradient></defs>
-<rect x="${CX}" width="${CW}" height="${CH}" rx="28" fill="${t.card}"/>
+<text class="big" x="0" y="${LINK ? 112 : 128}" font-size="118" style="letter-spacing:-.035em">${esc(NAME)}</text>
+${TAGLINE.map((p, k) => `<text class="mute in" x="3" y="${(LINK ? 170 : 190) + k * 37}" font-size="29" font-weight="600" style="letter-spacing:-.015em;animation-delay:${200 + k * 150}ms">${esc(p)}</text>`).join('\n')}
+${button}
+<rect x="${CX}" width="${W - CX}" height="${H}" rx="28" fill="${t.card}"/>
 <text class="mute" x="${X0}" y="48" font-size="17" font-weight="600">Contributions</text>
 <text class="big num" x="${X0 - 2}" y="112" font-size="64">${d.total.toLocaleString('en-US')}</text>
 <text class="mute" x="${X0}" y="138" font-size="17">in the last 12 months</text>
 <path class="ar" d="${line}L${X1} ${YB}L${X0} ${YB}Z" fill="url(#fill)"/>
 <path class="ln" d="${line}" pathLength="1" fill="none" stroke="${t.accent}" stroke-width="3.5" stroke-linejoin="round" stroke-linecap="round"/>
 <g class="dot"><circle class="ring" cx="${ex}" cy="${ey}" r="6" fill="none" stroke="${t.accent}" stroke-width="1.5"/><circle cx="${ex}" cy="${ey}" r="6" fill="${t.accent}"/></g>
-${months}
-</svg>
-</svg>
-`;
+${months}`;
+  return svg(W, H, t, body, { css, card: false, label: `${NAME}. ${TAGLINE.join(' ')} ${d.total} contributions in the last 12 months.` });
 }
 
 // ───────────────────────────── figures ─────────────────────────────
@@ -409,7 +435,8 @@ if (next !== readme) await writeFile(readmePath, next);
 
 for (const p of data.projects) console.log(`${String(p.commits).padStart(5)} commits  ${p.repo}`);
 
-console.log(`\n${LOGIN}: ${data.total} contributions on ${data.active} of ${data.days.length} days, longest streak ${data.longest}`);
+console.log(`\n${LOGIN}: ${data.total} contributions on ${data.active} of ${data.days.length} days, longest streak ${data.longest}` +
+  (PRIVATE ? ` (${data.added} of them commits in private repos, which made ${data.newDays} more days active)` : ''));
 }
 
 const data = await load();
