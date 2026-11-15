@@ -1,11 +1,10 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 460 214" width="460" height="214" role="img" aria-label="Languages, average share per repository: JavaScript 27.2%, Python 26.4%, HTML 14.0%, TypeScript 11.8%, Shell 7.2%, CSS 5.2%, Java 3.6%, Other 4.8%">
 <title>Languages, average share per repository: JavaScript 27.2%, Python 26.4%, HTML 14.0%, TypeScript 11.8%, Shell 7.2%, CSS 5.2%, Java 3.6%, Other 4.8%</title>
-<style>text{font-family:-apple-system,BlinkMacSystemFont,'SF Pro Display','SF Pro Text','Helvetica Neue','Segoe UI',Arial,sans-serif;fill:#1d1d1f}.mute{fill:#63636a}.accent{fill:#0066cc}.eyebrow{font-size:13px;font-weight:600;fill:#63636a}.big{font-weight:700;letter-spacing:-.022em}.num{font-variant-numeric:tabular-nums}@keyframes appear{from{opacity:0}}@media (prefers-reduced-motion:no-preference){.r{animation:appear .6s ease-out both}}</style>
+<style>text{font-family:-apple-system,BlinkMacSystemFont,'SF Pro Display','SF Pro Text','Helvetica Neue','Segoe UI',Arial,sans-serif;fill:#1d1d1f}.mute{fill:#63636a}.accent{fill:#0066cc}.eyebrow{font-size:13px;font-weight:600;fill:#63636a}.big{font-weight:700;letter-spacing:-.022em}.num{font-variant-numeric:tabular-nums}</style>
 <rect width="460" height="214" rx="20" fill="#f5f5f7"/>
 <defs><clipPath id="bar"><rect x="24" y="56" height="10" rx="5" width="412"/></clipPath></defs>
 <text class="eyebrow" x="24" y="38">Languages, average share per repo</text>
-<g class="r" clip-path="url(#bar)"><rect x="24" y="56" width="109.9" height="10" fill="#f1e05a"/><rect x="135.9" y="56" width="106.7" height="10" fill="#3572A5"/><rect x="244.5" y="56" width="55.5" height="10" fill="#e34c26"/><rect x="302" y="56" width="46.5" height="10" fill="#3178c6"/><rect x="350.6" y="56" width="27.5" height="10" fill="#89e051"/><rect x="380.1" y="56" width="19.5" height="10" fill="#663399"/><rect x="401.6" y="56" width="12.7" height="10" fill="#b07219"/><rect x="416.3" y="56" width="17.7" height="10" fill="#8e8e93"/></g>
-<g class="r">
+<g clip-path="url(#bar)"><rect x="24" y="56" width="109.9" height="10" fill="#f1e05a"/><rect x="135.9" y="56" width="106.7" height="10" fill="#3572A5"/><rect x="244.5" y="56" width="55.5" height="10" fill="#e34c26"/><rect x="302" y="56" width="46.5" height="10" fill="#3178c6"/><rect x="350.6" y="56" width="27.5" height="10" fill="#89e051"/><rect x="380.1" y="56" width="19.5" height="10" fill="#663399"/><rect x="401.6" y="56" width="12.7" height="10" fill="#b07219"/><rect x="416.3" y="56" width="17.7" height="10" fill="#8e8e93"/></g>
 <g><circle cx="29" cy="97.5" r="4.5" fill="#f1e05a"/><text x="42" y="102" font-size="13.5">JavaScript</text><text class="mute num" x="220" y="102" font-size="13" text-anchor="end">27.2%</text></g>
 <g><circle cx="241" cy="97.5" r="4.5" fill="#3572A5"/><text x="254" y="102" font-size="13.5">Python</text><text class="mute num" x="432" y="102" font-size="13" text-anchor="end">26.4%</text></g>
 <g><circle cx="29" cy="125.5" r="4.5" fill="#e34c26"/><text x="42" y="130" font-size="13.5">HTML</text><text class="mute num" x="220" y="130" font-size="13" text-anchor="end">14.0%</text></g>
@@ -14,5 +13,4 @@
 <g><circle cx="241" cy="153.5" r="4.5" fill="#663399"/><text x="254" y="158" font-size="13.5">CSS</text><text class="mute num" x="432" y="158" font-size="13" text-anchor="end">5.2%</text></g>
 <g><circle cx="29" cy="181.5" r="4.5" fill="#b07219"/><text x="42" y="186" font-size="13.5">Java</text><text class="mute num" x="220" y="186" font-size="13" text-anchor="end">3.6%</text></g>
 <g><circle cx="241" cy="181.5" r="4.5" fill="#8e8e93"/><text x="254" y="186" font-size="13.5">Other</text><text class="mute num" x="432" y="186" font-size="13" text-anchor="end">4.8%</text></g>
-</g>
 </svg>
