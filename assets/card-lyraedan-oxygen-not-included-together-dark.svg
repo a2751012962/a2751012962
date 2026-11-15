@@ -1,6 +1,6 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 460 186" width="460" height="186" role="img" aria-label="ONI Together: Multiplayer mod for Oxygen Not Included. I work on the netcode: animation, world and pipe sync, reconnects, packet batching.">
 <title>ONI Together: Multiplayer mod for Oxygen Not Included. I work on the netcode: animation, world and pipe sync, reconnects, packet batching.</title>
-<style>text{font-family:-apple-system,BlinkMacSystemFont,'SF Pro Display','SF Pro Text','Helvetica Neue','Segoe UI',Arial,sans-serif;fill:#f5f5f7}.mute{fill:#a1a1a6}.accent{fill:#2997ff}.eyebrow{font-size:13px;font-weight:600;fill:#a1a1a6}.big{font-weight:700;letter-spacing:-.022em}.num{font-variant-numeric:tabular-nums}@keyframes appear{from{opacity:0}}@keyframes rise{from{opacity:0;transform:translateY(8px)}}</style>
+<style>text{font-family:-apple-system,BlinkMacSystemFont,'SF Pro Display','SF Pro Text','Helvetica Neue','Segoe UI',Arial,sans-serif;fill:#f5f5f7}.mute{fill:#a1a1a6}.accent{fill:#2997ff}.eyebrow{font-size:13px;font-weight:600;fill:#a1a1a6}.big{font-weight:700;letter-spacing:-.022em}.num{font-variant-numeric:tabular-nums}@keyframes appear{from{opacity:0}}</style>
 <rect width="460" height="186" rx="20" fill="#161b22"/>
 <circle cx="29" cy="31.5" r="4.5" fill="#7355dd"/><text class="eyebrow" x="41" y="36">C#</text>
 <text class="accent" x="436" y="36" font-size="12.5" font-weight="600" text-anchor="end">Contributor</text>

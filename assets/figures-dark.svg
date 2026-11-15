@@ -1,6 +1,6 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 460 214" width="460" height="214" role="img" aria-label="Last 12 months: 145 active days, 8.7 per active day, 89 busiest day, Sep 15, 34 day longest streak, 38 repositories, 2020 joined GitHub">
 <title>Last 12 months: 145 active days, 8.7 per active day, 89 busiest day, Sep 15, 34 day longest streak, 38 repositories, 2020 joined GitHub</title>
-<style>text{font-family:-apple-system,BlinkMacSystemFont,'SF Pro Display','SF Pro Text','Helvetica Neue','Segoe UI',Arial,sans-serif;fill:#f5f5f7}.mute{fill:#a1a1a6}.accent{fill:#2997ff}.eyebrow{font-size:13px;font-weight:600;fill:#a1a1a6}.big{font-weight:700;letter-spacing:-.022em}.num{font-variant-numeric:tabular-nums}@keyframes appear{from{opacity:0}}@keyframes rise{from{opacity:0;transform:translateY(8px)}}@media (prefers-reduced-motion:no-preference){.r{animation:rise .5s ease-out both}}</style>
+<style>text{font-family:-apple-system,BlinkMacSystemFont,'SF Pro Display','SF Pro Text','Helvetica Neue','Segoe UI',Arial,sans-serif;fill:#f5f5f7}.mute{fill:#a1a1a6}.accent{fill:#2997ff}.eyebrow{font-size:13px;font-weight:600;fill:#a1a1a6}.big{font-weight:700;letter-spacing:-.022em}.num{font-variant-numeric:tabular-nums}@keyframes appear{from{opacity:0}}@media (prefers-reduced-motion:no-preference){.r{animation:appear .6s ease-out both}}</style>
 <rect width="460" height="214" rx="20" fill="#161b22"/>
 <text class="eyebrow" x="24" y="38">Activity, last 12 months</text>
 <g class="r">
