@@ -8,7 +8,7 @@
 <text class="mute" x="24" y="93" font-size="13">Bilingual campus-guide assistant: streaming chat grounded</text>
 <text class="mute" x="24" y="112" font-size="13">in official pages, a guide library and a dorm map, all in</text>
 <text class="mute" x="24" y="131" font-size="13">one Cloudflare Worker.</text>
-<text class="mute num" x="24" y="164" font-size="12.5">30 commits by me  ·  2 stars</text>
+<text class="mute num" x="24" y="164" font-size="12.5">31 commits by me  ·  2 stars</text>
 <circle cx="423" cy="155" r="13" fill="rgba(0,0,0,.07)"/>
 <path d="M418.5 159.5l9 -9m-6.5 0h6.5v6.5" fill="none" stroke="#1d1d1f" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
 </svg>
