@@ -7,7 +7,7 @@
 <text class="big" x="24" y="68" font-size="20">campustech</text>
 <text class="mute" x="24" y="93" font-size="13">Landing page for Campus Tech @ UIUC</text>
 <text class="mute" x="24" y="112" font-size="13">(campustech.iguide.chat)</text>
-<text class="mute num" x="24" y="164" font-size="12.5">38 commits by me</text>
+<text class="mute num" x="24" y="164" font-size="12.5">45 commits by me</text>
 <circle cx="423" cy="155" r="13" fill="rgba(0,0,0,.07)"/>
 <path d="M418.5 159.5l9 -9m-6.5 0h6.5v6.5" fill="none" stroke="#1d1d1f" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
 </svg>
