@@ -2,12 +2,12 @@
 <title>campustech: Landing page for Campus Tech @ UIUC (campustech.iguide.chat)</title>
 <style>text{font-family:-apple-system,BlinkMacSystemFont,'SF Pro Display','SF Pro Text','Helvetica Neue','Segoe UI',Arial,sans-serif;fill:#1d1d1f}.mute{fill:#63636a}.accent{fill:#0066cc}.eyebrow{font-size:13px;font-weight:600;fill:#63636a}.big{font-weight:700;letter-spacing:-.022em}.num{font-variant-numeric:tabular-nums}</style>
 <rect width="460" height="186" rx="20" fill="#f5f5f7"/>
-<circle cx="29" cy="31.5" r="4.5" fill="#e34c26"/><text class="eyebrow" x="41" y="36">HTML</text>
+<circle cx="29" cy="31.5" r="4.5" fill="#3572A5"/><text class="eyebrow" x="41" y="36">Python</text>
 <text class="accent" x="436" y="36" font-size="12.5" font-weight="600" text-anchor="end">Contributor</text>
 <text class="big" x="24" y="68" font-size="20">campustech</text>
 <text class="mute" x="24" y="93" font-size="13">Landing page for Campus Tech @ UIUC</text>
 <text class="mute" x="24" y="112" font-size="13">(campustech.iguide.chat)</text>
-<text class="mute num" x="24" y="164" font-size="12.5">45 commits by me</text>
+<text class="mute num" x="24" y="164" font-size="12.5">53 commits by me</text>
 <circle cx="423" cy="155" r="13" fill="rgba(0,0,0,.07)"/>
 <path d="M418.5 159.5l9 -9m-6.5 0h6.5v6.5" fill="none" stroke="#1d1d1f" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
 </svg>
